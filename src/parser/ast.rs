@@ -38,6 +38,18 @@ pub enum ASTNode {
         operator: String,
         right: Box<ASTNode>,
     },
+
+    WhileStatement {
+        condition: Box<ASTNode>,
+        body: Box<ASTNode>,
+    },
+
+    Break,
+
+    Assignment {
+        name: String,
+        value: Box<ASTNode>,
+    },
 }
 
 impl ASTNode {
@@ -98,6 +110,22 @@ impl ASTNode {
                 left.mostrar(0);
                 print!("{}│   └── right: ", sangria);
                 right.mostrar(0);
+            }
+
+            ASTNode::WhileStatement { condition, body } => {
+                println!("{}├── [While]", sangria);
+                println!("{}│   ├── condition:", sangria);
+                condition.mostrar(nivel + 2);
+                println!("{}│   └── body:", sangria);
+                body.mostrar(nivel + 2);
+            }
+
+            ASTNode::Break => println!("{}└── [Break]", sangria),
+
+            ASTNode::Assignment { name, value } => {
+                println!("{}├── [Assignment] -> name: '{}'", sangria, name);
+                print!("{}│   └── value: ", sangria);
+                value.mostrar(0);
             }
         }
     }
