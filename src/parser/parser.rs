@@ -14,11 +14,11 @@ impl Parser {
         }
     }
 
-    fn current_token(&self) -> Option<&Token> {
+    pub(crate) fn current_token(&self) -> Option<&Token> {
         self.tokens.get(self.position)
     }
 
-    fn advance(&mut self) {
+    pub(crate) fn advance(&mut self) {
         if self.position < self.tokens.len() {
             self.position += 1;
         }
@@ -39,18 +39,18 @@ impl Parser {
         )
     }
 
-    fn match_punctuator(&self, p: &str) -> bool {
+    pub(crate) fn match_punctuator(&self, p: &str) -> bool {
         matches!(
             self.current_token(),
             Some(Token {
-                tipo: TipoToken::Punctuator,
+                 tipo: TipoToken::Punctuator,
                 valor,
                 ..
             }) if valor == p
         )
     }
 
-    fn match_operator(&self, op: &str) -> bool {
+    pub(crate) fn match_operator(&self, op: &str) -> bool {
         matches!(
             self.current_token(),
             Some(Token {
@@ -74,7 +74,7 @@ impl Parser {
         }
     }
 
-    fn expect_punctuator(&mut self, p: &str, error_msg: &str) -> Result<(), String> {
+    pub(crate) fn expect_punctuator(&mut self, p: &str, error_msg: &str) -> Result<(), String> {
         if self.match_punctuator(p) {
             self.advance();
             Ok(())
@@ -86,73 +86,6 @@ impl Parser {
             ))
         }
     }
-
-    // =========================================================================
-    // D4 — Expresiones (stub provisional)
-    // =========================================================================
-
-    fn parse_expression(&mut self) -> Result<ASTNode, String> {
-        self.parse_primary()
-    }
-
-    fn parse_primary(&mut self) -> Result<ASTNode, String> {
-        match self.current_token() {
-            Some(Token {
-                tipo: TipoToken::Identifier,
-                valor,
-                ..
-            }) => {
-                self.advance();
-                Ok(ASTNode::Identifier(valor.clone()))
-            }
-            Some(Token {
-                tipo: TipoToken::LiteralNumber,
-                valor,
-                ..
-            }) => {
-                self.advance();
-                let num: i32 = valor.parse().map_err(|_| {
-                    format!("Número inválido en expresión: {}", valor)
-                })?;
-                Ok(ASTNode::Number(num))
-            }
-            other => Err(format!(
-                "Se esperaba identificador o número. Encontrado: {:?}",
-                other
-            )),
-        }
-    }
-
-    fn parse_condition(&mut self) -> Result<ASTNode, String> {
-        let left = self.parse_primary()?;
-
-        let operator = match self.current_token() {
-            Some(Token {
-                tipo: TipoToken::Operator,
-                valor,
-                ..
-            }) => valor.clone(),
-            _ => {
-                return Err(format!(
-                    "Se esperaba operador en la condición. Encontrado: {:?}",
-                    self.current_token()
-                ))
-            }
-        };
-        self.advance();
-
-        let right = self.parse_primary()?;
-
-        Ok(ASTNode::Condition {
-            left: Box::new(left),
-            operator,
-            right: Box::new(right),
-        })
-    }
-
-    // =========================================================================
-    // D2 — Estructuras de control: If, Block, While
-    // =========================================================================
 
     pub fn parse_control_structure(&mut self) -> Result<ASTNode, String> {
         match self.current_token() {
@@ -214,7 +147,6 @@ impl Parser {
 
         let condition = self.parse_condition()?;
         self.expect_punctuator(")", "Se esperaba ')' después de la condición del while")?;
-
         let body = self.parse_block()?;
 
         Ok(ASTNode::WhileStatement {
@@ -231,14 +163,12 @@ impl Parser {
 
     pub fn parse_block(&mut self) -> Result<ASTNode, String> {
         self.expect_punctuator("{", "Se esperaba '{' al inicio del bloque")?;
-
         let mut statements = Vec::new();
         while !self.match_punctuator("}") && !self.is_at_end() {
             statements.push(self.parse_statement()?);
         }
 
         self.expect_punctuator("}", "Se esperaba '}' al final del bloque")?;
-
         Ok(ASTNode::Block { statements })
     }
 
@@ -274,7 +204,6 @@ impl Parser {
                     .get(self.position + 1)
                     .map(|t| t.tipo == TipoToken::Operator && t.valor == "=")
                     .unwrap_or(false);
-
                 if is_assignment {
                     self.advance();
                     self.parse_assignment(name)
@@ -288,10 +217,6 @@ impl Parser {
             other => Err(format!("Sentencia no reconocida. Encontrado: {:?}", other)),
         }
     }
-
-    // =========================================================================
-    // D3 — Declaraciones y asignaciones (adaptadas al token del lexer)
-    // =========================================================================
 
     pub fn parse_declaration(&mut self) -> Result<ASTNode, String> {
         let type_name = match self.current_token() {
@@ -328,7 +253,6 @@ impl Parser {
         } else {
             ASTNode::Number(0)
         };
-
         self.expect_punctuator(";", "Se esperaba ';' al final de la declaración")?;
 
         Ok(ASTNode::Declaration {
@@ -341,7 +265,7 @@ impl Parser {
     pub fn parse_assignment(&mut self, var_name: String) -> Result<ASTNode, String> {
         if !self.match_operator("=") {
             return Err(format!(
-                "Se esperaba '=' después de '{}'. Encontrado: {:?}",
+                 "Se esperaba '=' después de '{}'. Encontrado: {:?}",
                 var_name,
                 self.current_token()
             ));
